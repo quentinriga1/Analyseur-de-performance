@@ -213,11 +213,15 @@
             border-left: 4px solid;
         }
 
-        .alert-info {
+.alert-info {
             background-color: #d1ecf1;
             border-color: #bee5eb;
             color: #0c5460;
-        }
+}
+
+#tableauVendeurs {
+    width: 100%;
+}
 
         .export-zone {
             background: white;
