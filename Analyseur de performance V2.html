@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyseur de Performance - Équipe de Vente</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Analyseur de Performance - Équipe de Vente</h1>
+        
+        <div class="alert alert-info">
+            <strong>Instructions :</strong> Ajoutez vos vendeurs et leurs données pour calculer automatiquement les KPI individuels et comparer les performances de l'équipe.
+        </div>
+
+        <div class="section no-print">
+            <h2>➕ Ajouter un Vendeur</h2>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="vendeurNom">Nom du Vendeur</label>
+                    <input type="text" id="vendeurNom" placeholder="Ex: Jean Dupont">
+                </div>
+                <div class="input-group">
+                    <label for="joursEffectifs">Jours de Travail Effectifs</label>
+                    <input type="number" id="joursEffectifs" placeholder="Ex: 20" min="1">
+                </div>
+                <div class="input-group">
+                    <label for="modeCalcul">Méthode de Calcul</label>
+                    <select id="modeCalcul" onchange="changerModeCalcul()">
+                        <option value="absences">Avec Absences</option>
+                        <option value="productivite">Avec Productivité (%)</option>
+                    </select>
+                </div>
+                <div class="input-group" id="groupeAbsences">
+                    <label for="joursAbsence">Jours d'Absence</label>
+                    <input type="number" id="joursAbsence" placeholder="Ex: 2" min="0" value="0">
+                </div>
+                <div class="input-group" id="groupeProductivite" style="display:none;">
+                    <label for="tauxProductivite">Taux de Productivité (%)</label>
+                    <input type="number" id="tauxProductivite" placeholder="Ex: 80" min="0" max="100" value="100">
+                </div>
+                <div class="input-group">
+                    <label for="totalClients">Total Clients Servis</label>
+                    <input type="number" id="totalClients" placeholder="Ex: 150" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="totalPoints">Total Points Réalisés</label>
+                    <input type="number" id="totalPoints" placeholder="Ex: 2500" min="0">
+                </div>
+            </div>
+            <button class="btn" onclick="ajouterVendeur()">Ajouter Vendeur</button>
+        </div>
+
+        <div id="exportZone">
+            <div class="export-zone">
+                <div class="screenshot-header">📊 Rapport de Performance - Équipe de Vente</div>
+                <div class="screenshot-date" id="reportDate"></div>
+            </div>
+
+            <div class="section">
+                <h2>👥 Équipe de Vente</h2>
+                <div id="tableauVendeurs">
+                    <p style="text-align: center; color: #6c757d; font-style: italic;">Aucun vendeur ajouté pour le moment.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📈 Graphiques de Comparaison</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <div class="chart-container">
+                        <canvas id="clientsChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="pointsChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="pointsParClientChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📊 Statistiques Globales</h2>
+                <div class="stats-grid" id="statsGlobales">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalVendeurs">0</div>
+                        <div class="stat-label">Vendeurs Actifs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="moyenneClients">0</div>
+                        <div class="stat-label">Moy. Clients/Jour</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="moyennePoints">0</div>
+                        <div class="stat-label">Moy. Points/Jour</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="meilleurPerformeur">-</div>
+                        <div class="stat-label">Top Performer Clients par jour</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="meilleurPointsJour">-</div>
+                        <div class="stat-label">Top Performer Points/Jour</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="meilleurPointsClient">-</div>
+                        <div class="stat-label">Top Performer Points/Client</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section no-print">
+            <h2><i class="fa fa-save"></i> Actions</h2>
+            <button class="btn btn-export" onclick="exporterDonnees()"><i class="fa fa-file-export"></i> Exporter en Excel</button>
+            <button class="btn btn-export" onclick="exporterCapture()"><i class="fa fa-camera"></i> Exporter Capture d'écran</button>
+            <button class="btn btn-danger" onclick="viderDonnees()"><i class="fa fa-trash"></i> Vider les Données</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
