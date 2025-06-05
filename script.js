@@ -31,6 +31,8 @@ function ajouterVendeur() {
         nom,
         joursEffectifs,
         joursAbsence,
+        tauxProductivite,
+        modeCalcul,
         joursReelsTravaill,
         totalClients,
         totalPoints,
@@ -98,11 +100,13 @@ function mettreAJourTableau() {
     const moyennePointsParClient = vendeurs.reduce((sum, v) => sum + v.pointsParClient, 0) / vendeurs.length;
 
 
+    const headerAbsence = vendeurs.some(v => v.modeCalcul === 'productivite') ? 'Productivité (%)' : 'Jours Absence';
+
     let html = `
         <div style="background: #e8f4f8; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
             <h3 style="margin: 0; color: #2c3e50;">📊 Moyennes de l'Équipe</h3>
             <p style="margin: 10px 0 0 0; color: #34495e;">
-                <strong>Clients/Jour :</strong> ${moyenneClientsJour.toFixed(2)} | 
+                <strong>Clients/Jour :</strong> ${moyenneClientsJour.toFixed(2)} |
                 <strong>Points/Jour :</strong> ${moyennePointsJour.toFixed(0)} |
                 <strong>Points/Client :</strong> ${moyennePointsParClient.toFixed(2)} </p>
         </div>
@@ -111,7 +115,7 @@ function mettreAJourTableau() {
                 <tr>
                     <th>Vendeur</th>
                     <th>Jours Effectifs</th>
-                    <th>Jours Absence</th>
+                    <th id="colAbsence">${headerAbsence}</th>
                     <th>Jours Réels</th>
                     <th>Total Clients</th>
                     <th>Total Points</th>
@@ -132,7 +136,7 @@ function mettreAJourTableau() {
             <tr>
                 <td><strong>${vendeur.nom}</strong></td>
                 <td>${vendeur.joursEffectifs}</td>
-                <td>${vendeur.joursAbsence}</td>
+                <td>${vendeur.modeCalcul === 'productivite' ? vendeur.tauxProductivite + '%' : vendeur.joursAbsence}</td>
                 <td>${vendeur.joursReelsTravaill}</td>
                 <td>${vendeur.totalClients}</td>
                 <td>${vendeur.totalPoints}</td>
@@ -318,6 +322,8 @@ function exporterDonnees() {
     const moyennePointsJour = vendeurs.reduce((sum, v) => sum + v.pointsParJour, 0) / vendeurs.length;
     const moyennePointsParClient = vendeurs.reduce((sum, v) => sum + v.pointsParClient, 0) / vendeurs.length; // NEW
 
+    const headerAbsence = vendeurs.some(v => v.modeCalcul === 'productivite') ? 'Productivité (%)' : 'Jours Absence';
+
     const donneesExport = [
         ['ANALYSE DE PERFORMANCE - EQUIPE DE VENTE'],
         ['Date d\'export:', new Date().toLocaleDateString('fr-FR')],
@@ -329,7 +335,7 @@ function exporterDonnees() {
         [''],
         ['DONNEES DETAILLEES'],
         // MODIFIED: Added Points/Client and its performance column
-        ['Vendeur', 'Jours Effectifs', 'Jours Absence', 'Jours Réels', 'Total Clients', 'Total Points', 'Clients/Jour', 'Points/Jour', 'Points/Client', 'Performance Clients/Jour', 'Performance Points/Jour', 'Performance Points/Client']
+        ['Vendeur', 'Jours Effectifs', headerAbsence, 'Jours Réels', 'Total Clients', 'Total Points', 'Clients/Jour', 'Points/Jour', 'Points/Client', 'Performance Clients/Jour', 'Performance Points/Jour', 'Performance Points/Client']
     ];
 
     vendeurs.forEach(vendeur => {
@@ -343,7 +349,7 @@ function exporterDonnees() {
         donneesExport.push([
             vendeur.nom,
             vendeur.joursEffectifs,
-            vendeur.joursAbsence,
+            vendeur.modeCalcul === 'productivite' ? vendeur.tauxProductivite + '%' : vendeur.joursAbsence,
             vendeur.joursReelsTravaill,
             vendeur.totalClients,
             vendeur.totalPoints,
