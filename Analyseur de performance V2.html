@@ -28,18 +28,18 @@
                 </div>
                 <div class="input-group">
                     <label for="typePeriode">Type de Période</label>
-                    <select id="typePeriode" onchange="changerTypePeriode()">
+                    <select id="typePeriode" onchange="changerTypePeriode();afficherPeriodeSelectionnee()">
                         <option value="mois">Mois</option>
                         <option value="trimestre">Trimestre</option>
                     </select>
                 </div>
                 <div class="input-group" id="groupeMois">
                     <label for="selectMois">Mois</label>
-                    <select id="selectMois"></select>
+                    <select id="selectMois" onchange="afficherPeriodeSelectionnee()"></select>
                 </div>
                 <div class="input-group" id="groupeTrimestre" style="display:none;">
                     <label for="selectTrimestre">Trimestre</label>
-                    <select id="selectTrimestre"></select>
+                    <select id="selectTrimestre" onchange="afficherPeriodeSelectionnee()"></select>
                 </div>
                 <div class="input-group" id="groupeProductivite">
                     <label for="tauxProductivite">Taux de Productivité (%)</label>
@@ -61,6 +61,7 @@
             <div class="export-zone">
                 <div class="screenshot-header">📊 Rapport de Performance - Équipe de Vente</div>
                 <div class="screenshot-date" id="reportDate"></div>
+                <div class="selected-period" id="selectedPeriod"></div>
             </div>
 
             <div class="section">
