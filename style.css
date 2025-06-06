@@ -249,6 +249,14 @@
             margin-bottom: 30px;
         }
 
+        .selected-period {
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
         @media print {
             .no-print {
                 display: none !important;
