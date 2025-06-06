@@ -113,8 +113,7 @@ function calculateWorkingDays(start, end) {
     return total;
 }
 
-function ajouterVendeur() {
-    const nom = document.getElementById('vendeurNom').value.trim();
+function getPeriodeDates() {
     const typePeriode = document.getElementById('typePeriode').value;
     let startDate, endDate;
     if (typePeriode === 'mois') {
@@ -136,6 +135,12 @@ function ajouterVendeur() {
         startDate = new Date(year, 0, 1);
         endDate = new Date(year, 11, 31);
     }
+    return { startDate, endDate };
+}
+
+function ajouterVendeur() {
+    const nom = document.getElementById('vendeurNom').value.trim();
+    const { startDate, endDate } = getPeriodeDates();
 
     const tauxProductivite = parseFloat(document.getElementById('tauxProductivite').value) || 100;
     const totalClients = parseInt(document.getElementById('totalClients').value) || 0;
@@ -174,6 +179,52 @@ function ajouterVendeur() {
     document.getElementById('totalPoints').value = '';
 
     mettreAJourAffichage();
+}
+
+function importerDepuisExcel() {
+    const fileInput = document.getElementById('excelFile');
+    if (!fileInput || fileInput.files.length === 0) {
+        alert('Veuillez sélectionner un fichier Excel.');
+        return;
+    }
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || !row[0]) continue;
+            const nom = String(row[0]).trim();
+            const tauxProductivite = parseFloat(row[1]) || 100;
+            const totalClients = parseInt(row[2]) || 0;
+            const totalPoints = parseInt(row[3]) || 0;
+
+            const { startDate, endDate } = getPeriodeDates();
+            const joursTravaillables = calculateWorkingDays(startDate, endDate);
+            const joursReelsTravaill = Math.max(1, joursTravaillables * (tauxProductivite / 100));
+            const clientsParJour = parseFloat((totalClients / joursReelsTravaill).toFixed(2));
+            const pointsParJour = parseFloat((totalPoints / joursReelsTravaill).toFixed(2));
+            const pointsParClient = parseFloat((totalClients > 0 ? totalPoints / totalClients : 0).toFixed(2));
+
+            vendeurs.push({
+                nom,
+                joursTravaillables,
+                tauxProductivite,
+                joursReelsTravaill,
+                totalClients,
+                totalPoints,
+                clientsParJour,
+                pointsParJour,
+                pointsParClient
+            });
+        }
+        mettreAJourAffichage();
+        fileInput.value = '';
+    };
+    reader.readAsArrayBuffer(file);
 }
 
 function supprimerVendeur(index) {

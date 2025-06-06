@@ -8,3 +8,6 @@ Pour une version autonome, ouvrez directement `Analyseur de performance Standalo
 Les styles sont désormais dans `style.css` et la logique dans `script.js`.
 
 Vous pouvez choisir de calculer la performance à partir des jours d'absence ou d'un pourcentage de productivité.
+Il est également possible d'importer un fichier Excel contenant les colonnes
+`Nom du Vendeur`, `Taux de Productivité (%)`, `Total Clients Servis` et
+`Total Points Réalisés` pour renseigner automatiquement les vendeurs.
