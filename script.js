@@ -13,8 +13,8 @@ function populatePeriodeSelects() {
         }
         for (let t = 1; t <= 4; t++) {
             const optT = document.createElement('option');
-            optT.value = `${year}-T${t}`;
-            optT.textContent = `${year} T${t}`;
+            optT.value = `${year}-Q${t}`;
+            optT.textContent = `${year} Q${t}`;
             selectTrimestre.appendChild(optT);
         }
     }
@@ -24,6 +24,18 @@ function changerTypePeriode() {
     const type = document.getElementById('typePeriode').value;
     document.getElementById('groupeMois').style.display = type === 'mois' ? 'flex' : 'none';
     document.getElementById('groupeTrimestre').style.display = type === 'trimestre' ? 'flex' : 'none';
+    afficherPeriodeSelectionnee();
+}
+
+function afficherPeriodeSelectionnee() {
+    const type = document.getElementById('typePeriode').value;
+    let texte = '';
+    if (type === 'mois') {
+        texte = document.getElementById('selectMois').value;
+    } else {
+        texte = document.getElementById('selectTrimestre').value.replace('-Q', ' Q');
+    }
+    document.getElementById('selectedPeriod').textContent = texte;
 }
 
 function getBelgiumHolidays(year) {
@@ -91,7 +103,7 @@ function ajouterVendeur() {
         startDate = new Date(year, month - 1, 1);
         endDate = new Date(year, month, 0);
     } else {
-        const [year, trimestre] = document.getElementById('selectTrimestre').value.split('-T');
+        const [year, trimestre] = document.getElementById('selectTrimestre').value.split('-Q');
         const startMonth = (parseInt(trimestre) - 1) * 3;
         startDate = new Date(parseInt(year), startMonth, 1);
         endDate = new Date(parseInt(year), startMonth + 3, 0);
@@ -608,5 +620,6 @@ function exporterCapture() {
 document.addEventListener('DOMContentLoaded', () => {
     populatePeriodeSelects();
     changerTypePeriode();
+    afficherPeriodeSelectionnee();
     mettreAJourAffichage(); // To set the initial empty state correctly
 });
