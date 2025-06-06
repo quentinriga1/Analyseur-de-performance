@@ -33,6 +33,8 @@
                     <select id="typePeriode" onchange="changerTypePeriode();afficherPeriodeSelectionnee()">
                         <option value="mois">Mois</option>
                         <option value="trimestre">Trimestre</option>
+                        <option value="semestre">Semestre</option>
+                        <option value="annee">Année</option>
                     </select>
                 </div>
                 <div class="input-group" id="groupeMois">
@@ -42,6 +44,14 @@
                 <div class="input-group" id="groupeTrimestre" style="display:none;">
                     <label for="selectTrimestre">Trimestre</label>
                     <select id="selectTrimestre" onchange="afficherPeriodeSelectionnee()"></select>
+                </div>
+                <div class="input-group" id="groupeSemestre" style="display:none;">
+                    <label for="selectSemestre">Semestre</label>
+                    <select id="selectSemestre" onchange="afficherPeriodeSelectionnee()"></select>
+                </div>
+                <div class="input-group" id="groupeAnnee" style="display:none;">
+                    <label for="selectAnnee">Année</label>
+                    <select id="selectAnnee" onchange="afficherPeriodeSelectionnee()"></select>
                 </div>
                 <div class="input-group" id="groupeProductivite">
                     <label for="tauxProductivite">Taux de Productivité (%)</label>
