@@ -153,6 +153,7 @@ function ajouterVendeur() {
 
     const joursTravaillables = calculateWorkingDays(startDate, endDate);
     const joursReelsTravaill = Math.max(1, joursTravaillables * (tauxProductivite / 100));
+    const joursReelsTravaillRounded = parseFloat(joursReelsTravaill.toFixed(2));
     const clientsParJour = (totalClients / joursReelsTravaill).toFixed(2);
     const pointsParJour = (totalPoints / joursReelsTravaill).toFixed(2);
     // NEW: Calculate points par client
@@ -162,8 +163,8 @@ function ajouterVendeur() {
     const vendeur = {
         nom,
         joursTravaillables,
-        tauxProductivite,
-        joursReelsTravaill,
+        tauxProductivite: parseFloat(tauxProductivite.toFixed(2)),
+        joursReelsTravaill: joursReelsTravaillRounded,
         totalClients,
         totalPoints,
         clientsParJour: parseFloat(clientsParJour),
@@ -205,6 +206,7 @@ function importerDepuisExcel() {
             const { startDate, endDate } = getPeriodeDates();
             const joursTravaillables = calculateWorkingDays(startDate, endDate);
             const joursReelsTravaill = Math.max(1, joursTravaillables * (tauxProductivite / 100));
+            const joursReelsTravaillRounded = parseFloat(joursReelsTravaill.toFixed(2));
             const clientsParJour = parseFloat((totalClients / joursReelsTravaill).toFixed(2));
             const pointsParJour = parseFloat((totalPoints / joursReelsTravaill).toFixed(2));
             const pointsParClient = parseFloat((totalClients > 0 ? totalPoints / totalClients : 0).toFixed(2));
@@ -212,8 +214,8 @@ function importerDepuisExcel() {
             vendeurs.push({
                 nom,
                 joursTravaillables,
-                tauxProductivite,
-                joursReelsTravaill,
+                tauxProductivite: parseFloat(tauxProductivite.toFixed(2)),
+                joursReelsTravaill: joursReelsTravaillRounded,
                 totalClients,
                 totalPoints,
                 clientsParJour,
@@ -309,8 +311,8 @@ function mettreAJourTableau() {
             <tr>
                 <td><strong>${vendeur.nom}</strong></td>
                 <td>${vendeur.joursTravaillables}</td>
-                <td>${vendeur.tauxProductivite}%</td>
-                <td>${vendeur.joursReelsTravaill}</td>
+                <td>${vendeur.tauxProductivite.toFixed(2)}%</td>
+                <td>${vendeur.joursReelsTravaill.toFixed(2)}</td>
                 <td>${vendeur.totalClients}</td>
                 <td>${vendeur.totalPoints}</td>
                 <td><span class="performance-cell ${clientsClass}">${vendeur.clientsParJour.toFixed(2)}</span></td>
@@ -522,8 +524,8 @@ function exporterDonnees() {
         donneesExport.push([
             vendeur.nom,
             vendeur.joursTravaillables,
-            vendeur.tauxProductivite + '%',
-            vendeur.joursReelsTravaill,
+            vendeur.tauxProductivite.toFixed(2) + '%',
+            vendeur.joursReelsTravaill.toFixed(2),
             vendeur.totalClients,
             vendeur.totalPoints,
             vendeur.clientsParJour.toFixed(2),
