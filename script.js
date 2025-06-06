@@ -1,26 +1,113 @@
 let vendeurs = [];
 let clientsChart, pointsChart, pointsParClientChart; // NEW: Added pointsParClientChart
 
+function populatePeriodeSelects() {
+    const selectMois = document.getElementById('selectMois');
+    const selectTrimestre = document.getElementById('selectTrimestre');
+    for (let year = 2025; year <= 2030; year++) {
+        for (let m = 1; m <= 12; m++) {
+            const opt = document.createElement('option');
+            opt.value = `${year}-${String(m).padStart(2,'0')}`;
+            opt.textContent = `${year}-${String(m).padStart(2,'0')}`;
+            selectMois.appendChild(opt);
+        }
+        for (let t = 1; t <= 4; t++) {
+            const optT = document.createElement('option');
+            optT.value = `${year}-T${t}`;
+            optT.textContent = `${year} T${t}`;
+            selectTrimestre.appendChild(optT);
+        }
+    }
+}
+
+function changerTypePeriode() {
+    const type = document.getElementById('typePeriode').value;
+    document.getElementById('groupeMois').style.display = type === 'mois' ? 'flex' : 'none';
+    document.getElementById('groupeTrimestre').style.display = type === 'trimestre' ? 'flex' : 'none';
+}
+
+function getBelgiumHolidays(year) {
+    const holidays = new Set();
+    holidays.add(`${year}-01-01`); // Nouvel An
+    const easter = getEasterDate(year);
+    const addDays = (date, d) => new Date(date.getTime() + d * 86400000);
+    const format = d => d.toISOString().split('T')[0];
+    holidays.add(format(addDays(easter, 1))); // Lundi de Pâques
+    holidays.add(`${year}-05-01`); // Fête du Travail
+    holidays.add(format(addDays(easter, 39))); // Ascension
+    holidays.add(format(addDays(easter, 50))); // Lundi de Pentecôte
+    holidays.add(`${year}-07-21`); // Fête nationale
+    holidays.add(`${year}-08-15`); // Assomption
+    holidays.add(`${year}-11-01`); // Toussaint
+    holidays.add(`${year}-11-11`); // Armistice
+    holidays.add(`${year}-12-25`); // Noël
+    return holidays;
+}
+
+// Algorithme de calcul de la date de Pâques (algorithme de Meeus/Jones/Butcher)
+function getEasterDate(year) {
+    const f = Math.floor;
+    const G = year % 19;
+    const C = f(year / 100);
+    const H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30;
+    const I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11));
+    const J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7;
+    const L = I - J;
+    const month = 3 + f((L + 40) / 44);
+    const day = L + 28 - 31 * f(month / 4);
+    return new Date(year, month - 1, day);
+}
+
+function calculateWorkingDays(start, end) {
+    let total = 0;
+    let weekCount = 0;
+    const holidays = new Set();
+    for (let y = start.getFullYear(); y <= end.getFullYear(); y++) {
+        for (const h of getBelgiumHolidays(y)) holidays.add(h);
+    }
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const day = d.getDay(); // 0 dimanche
+        const dateStr = d.toISOString().split('T')[0];
+        if (day !== 0 && !holidays.has(dateStr)) {
+            total++;
+            weekCount++;
+        }
+        if (day === 6 || d.getTime() === end.getTime()) {
+            if (weekCount > 0) {
+                total--; // jour off hebdomadaire
+            }
+            weekCount = 0;
+        }
+    }
+    return total;
+}
+
 function ajouterVendeur() {
     const nom = document.getElementById('vendeurNom').value.trim();
-    const joursEffectifs = parseInt(document.getElementById('joursEffectifs').value) || 0;
-    const modeCalcul = document.getElementById('modeCalcul').value;
-    const joursAbsence = parseInt(document.getElementById('joursAbsence').value) || 0;
+    const typePeriode = document.getElementById('typePeriode').value;
+    let startDate, endDate;
+    if (typePeriode === 'mois') {
+        const [year, month] = document.getElementById('selectMois').value.split('-').map(Number);
+        startDate = new Date(year, month - 1, 1);
+        endDate = new Date(year, month, 0);
+    } else {
+        const [year, trimestre] = document.getElementById('selectTrimestre').value.split('-T');
+        const startMonth = (parseInt(trimestre) - 1) * 3;
+        startDate = new Date(parseInt(year), startMonth, 1);
+        endDate = new Date(parseInt(year), startMonth + 3, 0);
+    }
+
     const tauxProductivite = parseFloat(document.getElementById('tauxProductivite').value) || 100;
     const totalClients = parseInt(document.getElementById('totalClients').value) || 0;
     const totalPoints = parseInt(document.getElementById('totalPoints').value) || 0;
 
-    if (!nom || joursEffectifs <= 0) {
-        alert('Veuillez remplir tous les champs obligatoires (nom et jours effectifs).');
+    if (!nom) {
+        alert('Veuillez saisir le nom du vendeur.');
         return;
     }
 
-    let joursReelsTravaill;
-    if (modeCalcul === 'productivite') {
-        joursReelsTravaill = Math.max(1, joursEffectifs * (tauxProductivite / 100));
-    } else {
-        joursReelsTravaill = Math.max(1, joursEffectifs - joursAbsence);
-    }
+    const joursTravaillables = calculateWorkingDays(startDate, endDate);
+    const joursReelsTravaill = Math.max(1, joursTravaillables * (tauxProductivite / 100));
     const clientsParJour = (totalClients / joursReelsTravaill).toFixed(2);
     const pointsParJour = (totalPoints / joursReelsTravaill).toFixed(2);
     // NEW: Calculate points par client
@@ -29,10 +116,8 @@ function ajouterVendeur() {
 
     const vendeur = {
         nom,
-        joursEffectifs,
-        joursAbsence,
+        joursTravaillables,
         tauxProductivite,
-        modeCalcul,
         joursReelsTravaill,
         totalClients,
         totalPoints,
@@ -44,13 +129,10 @@ function ajouterVendeur() {
     vendeurs.push(vendeur);
     
     document.getElementById('vendeurNom').value = '';
-    document.getElementById('joursEffectifs').value = '';
-    document.getElementById('joursAbsence').value = '0';
     document.getElementById('tauxProductivite').value = '100';
     document.getElementById('totalClients').value = '';
     document.getElementById('totalPoints').value = '';
 
-    changerModeCalcul();
     mettreAJourAffichage();
 }
 
@@ -100,7 +182,7 @@ function mettreAJourTableau() {
     const moyennePointsParClient = vendeurs.reduce((sum, v) => sum + v.pointsParClient, 0) / vendeurs.length;
 
 
-    const headerAbsence = vendeurs.some(v => v.modeCalcul === 'productivite') ? 'Productivité (%)' : 'Jours Absence';
+    const headerAbsence = 'Productivité (%)';
 
     let html = `
         <div style="background: #e8f4f8; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
@@ -114,7 +196,7 @@ function mettreAJourTableau() {
             <thead>
                 <tr>
                     <th>Vendeur</th>
-                    <th>Jours Effectifs</th>
+                    <th>Jours Travaillables</th>
                     <th id="colAbsence">${headerAbsence}</th>
                     <th>Jours Réels</th>
                     <th>Total Clients</th>
@@ -135,8 +217,8 @@ function mettreAJourTableau() {
         html += `
             <tr>
                 <td><strong>${vendeur.nom}</strong></td>
-                <td>${vendeur.joursEffectifs}</td>
-                <td>${vendeur.modeCalcul === 'productivite' ? vendeur.tauxProductivite + '%' : vendeur.joursAbsence}</td>
+                <td>${vendeur.joursTravaillables}</td>
+                <td>${vendeur.tauxProductivite}%</td>
                 <td>${vendeur.joursReelsTravaill}</td>
                 <td>${vendeur.totalClients}</td>
                 <td>${vendeur.totalPoints}</td>
@@ -322,7 +404,7 @@ function exporterDonnees() {
     const moyennePointsJour = vendeurs.reduce((sum, v) => sum + v.pointsParJour, 0) / vendeurs.length;
     const moyennePointsParClient = vendeurs.reduce((sum, v) => sum + v.pointsParClient, 0) / vendeurs.length; // NEW
 
-    const headerAbsence = vendeurs.some(v => v.modeCalcul === 'productivite') ? 'Productivité (%)' : 'Jours Absence';
+    const headerAbsence = 'Productivité (%)';
 
     const donneesExport = [
         ['ANALYSE DE PERFORMANCE - EQUIPE DE VENTE'],
@@ -335,7 +417,7 @@ function exporterDonnees() {
         [''],
         ['DONNEES DETAILLEES'],
         // MODIFIED: Added Points/Client and its performance column
-        ['Vendeur', 'Jours Effectifs', headerAbsence, 'Jours Réels', 'Total Clients', 'Total Points', 'Clients/Jour', 'Points/Jour', 'Points/Client', 'Performance Clients/Jour', 'Performance Points/Jour', 'Performance Points/Client']
+        ['Vendeur', 'Jours Travaillables', headerAbsence, 'Jours Réels', 'Total Clients', 'Total Points', 'Clients/Jour', 'Points/Jour', 'Points/Client', 'Performance Clients/Jour', 'Performance Points/Jour', 'Performance Points/Client']
     ];
 
     vendeurs.forEach(vendeur => {
@@ -348,8 +430,8 @@ function exporterDonnees() {
         
         donneesExport.push([
             vendeur.nom,
-            vendeur.joursEffectifs,
-            vendeur.modeCalcul === 'productivite' ? vendeur.tauxProductivite + '%' : vendeur.joursAbsence,
+            vendeur.joursTravaillables,
+            vendeur.tauxProductivite + '%',
             vendeur.joursReelsTravaill,
             vendeur.totalClients,
             vendeur.totalPoints,
@@ -464,11 +546,6 @@ function viderDonnees() {
     }
 }
 
-function changerModeCalcul() {
-    const mode = document.getElementById('modeCalcul').value;
-    document.getElementById('groupeAbsences').style.display = mode === 'absences' ? 'flex' : 'none';
-    document.getElementById('groupeProductivite').style.display = mode === 'productivite' ? 'flex' : 'none';
-}
 
 function exporterCapture() {
     if (vendeurs.length === 0) {
@@ -529,6 +606,7 @@ function exporterCapture() {
 
 // Initial call to set up the view if needed, though it's mostly event-driven
 document.addEventListener('DOMContentLoaded', () => {
-    changerModeCalcul();
+    populatePeriodeSelects();
+    changerTypePeriode();
     mettreAJourAffichage(); // To set the initial empty state correctly
 });
