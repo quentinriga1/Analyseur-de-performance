@@ -27,21 +27,21 @@
                     <input type="text" id="vendeurNom" placeholder="Ex: Jean Dupont">
                 </div>
                 <div class="input-group">
-                    <label for="joursEffectifs">Jours de Travail Effectifs</label>
-                    <input type="number" id="joursEffectifs" placeholder="Ex: 20" min="1">
-                </div>
-                <div class="input-group">
-                    <label for="modeCalcul">Méthode de Calcul</label>
-                    <select id="modeCalcul" onchange="changerModeCalcul()">
-                        <option value="absences">Avec Absences</option>
-                        <option value="productivite">Avec Productivité (%)</option>
+                    <label for="typePeriode">Type de Période</label>
+                    <select id="typePeriode" onchange="changerTypePeriode()">
+                        <option value="mois">Mois</option>
+                        <option value="trimestre">Trimestre</option>
                     </select>
                 </div>
-                <div class="input-group" id="groupeAbsences">
-                    <label for="joursAbsence">Jours d'Absence</label>
-                    <input type="number" id="joursAbsence" placeholder="Ex: 2" min="0" value="0">
+                <div class="input-group" id="groupeMois">
+                    <label for="selectMois">Mois</label>
+                    <select id="selectMois"></select>
                 </div>
-                <div class="input-group" id="groupeProductivite" style="display:none;">
+                <div class="input-group" id="groupeTrimestre" style="display:none;">
+                    <label for="selectTrimestre">Trimestre</label>
+                    <select id="selectTrimestre"></select>
+                </div>
+                <div class="input-group" id="groupeProductivite">
                     <label for="tauxProductivite">Taux de Productivité (%)</label>
                     <input type="number" id="tauxProductivite" placeholder="Ex: 80" min="0" max="100" value="100">
                 </div>
