@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyseur de Performance - Équipe de Vente</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+:root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+}
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .btn-export {
+            background: linear-gradient(45deg, #27ae60, #16a085);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        th {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .performance-cell {
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .above-average { background: #d4edda; color: #155724; }
+        .below-average { background: #f8d7da; color: #721c24; }
+        .average { background: #e2e3e5; color: #383d41; }
+
+        .chart-container {
+            position: relative;
+            height: 400px; /* MODIFIED: Adjusted height slightly if needed */
+            margin-top: 20px; /* MODIFIED: Adjusted margin */
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 20px;
+            margin-top: 20px;
+            justify-content: space-between;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: scale(1.05);
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+
+.alert-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+}
+
+#tableauVendeurs {
+    width: 100%;
+}
+
+        .export-zone {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .screenshot-header {
+            text-align: center;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding: 10px;
+        }
+
+        .screenshot-date {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 30px;
+        }
+
+        .selected-period {
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            body {
+                background: white !important;
+            }
+            
+            .container {
+                background: white !important;
+                box-shadow: none !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 20px !important;
+            }
+        }
+        /* Ensure this media query is correctly placed if it's for specific screen sizes */
+        @media (max-width: 768px) { /* Example: for smaller screens */
+            .container {
+                padding: 15px;
+            }
+            
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Analyseur de Performance - Équipe de Vente</h1>
+        
+        <div class="alert alert-info">
+            <strong>Instructions :</strong> Ajoutez vos vendeurs et leurs données pour calculer automatiquement les KPI individuels et comparer les performances de l'équipe.<br>
+            Pour les datas “Point/Clients” → PBI CBU Sales Lvl2 → Direct Sales → MyShop Perf.Sales → Sales Comparison by Agent<br>
+            Pour les datas « Productivité » → Excell SAP ou PBI Team leader reports
+        </div>
+
+        <div class="section no-print">
+            <h2>➕ Ajouter un Vendeur</h2>
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="vendeurNom">Nom du Vendeur</label>
+                    <input type="text" id="vendeurNom" placeholder="Ex: Jean Dupont">
+                </div>
+                <div class="input-group">
+                    <label for="typePeriode">Type de Période</label>
+                    <select id="typePeriode" onchange="changerTypePeriode();afficherPeriodeSelectionnee()">
+                        <option value="mois">Mois</option>
+                        <option value="trimestre">Trimestre</option>
+                        <option value="semestre">Semestre</option>
+                        <option value="annee">Année</option>
+                    </select>
+                </div>
+                <div class="input-group" id="groupeMois">
+                    <label for="selectMois">Mois</label>
+                    <select id="selectMois" onchange="afficherPeriodeSelectionnee()"></select>
+                </div>
+                <div class="input-group" id="groupeTrimestre" style="display:none;">
+                    <label for="selectTrimestre">Trimestre</label>
+                    <select id="selectTrimestre" onchange="afficherPeriodeSelectionnee()"></select>
+                </div>
+                <div class="input-group" id="groupeSemestre" style="display:none;">
+                    <label for="selectSemestre">Semestre</label>
+                    <select id="selectSemestre" onchange="afficherPeriodeSelectionnee()"></select>
+                </div>
+                <div class="input-group" id="groupeAnnee" style="display:none;">
+                    <label for="selectAnnee">Année</label>
+                    <select id="selectAnnee" onchange="afficherPeriodeSelectionnee()"></select>
+                </div>
+                <div class="input-group" id="groupeProductivite">
+                    <label for="tauxProductivite">Taux de Productivité (%)</label>
+                    <input type="number" id="tauxProductivite" placeholder="Ex: 80" min="0" max="100" value="100">
+                </div>
+                <div class="input-group">
+                    <label for="totalClients">Total Clients Servis</label>
+                    <input type="number" id="totalClients" placeholder="Ex: 150" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="totalPoints">Total Points Réalisés</label>
+                    <input type="number" id="totalPoints" placeholder="Ex: 2500" min="0">
+                </div>
+            </div>
+            <button class="btn" onclick="ajouterVendeur()">Ajouter Vendeur</button>
+        </div>
+
+        <div id="exportZone">
+            <div class="export-zone">
+                <div class="screenshot-header">📊 Rapport de Performance - Équipe de Vente</div>
+                <div class="screenshot-date" id="reportDate"></div>
+                <div class="selected-period" id="selectedPeriod"></div>
+            </div>
+
+            <div class="section">
+                <h2>👥 Équipe de Vente</h2>
+                <div id="tableauVendeurs">
+                    <p style="text-align: center; color: #6c757d; font-style: italic;">Aucun vendeur ajouté pour le moment.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📈 Graphiques de Comparaison</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <div class="chart-container">
+                        <canvas id="clientsChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="pointsChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="pointsParClientChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📊 Statistiques Globales</h2>
+                <div class="stats-grid" id="statsGlobales">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalVendeurs">0</div>
+                        <div class="stat-label">Vendeurs Actifs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="moyenneClients">0</div>
+                        <div class="stat-label">Moy. Clients/Jour</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="moyennePoints">0</div>
+                        <div class="stat-label">Moy. Points/Jour</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="meilleurPerformeur">-</div>
+                        <div class="stat-label">Top Performer Clients par jour</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="meilleurPointsJour">-</div>
+                        <div class="stat-label">Top Performer Points/Jour</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="meilleurPointsClient">-</div>
+                        <div class="stat-label">Top Performer Points/Client</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section no-print">
+            <h2><i class="fa fa-save"></i> Actions</h2>
+            <button class="btn btn-export" onclick="exporterDonnees()"><i class="fa fa-file-export"></i> Exporter en Excel</button>
+            <button class="btn btn-export" onclick="exporterCapture()"><i class="fa fa-camera"></i> Exporter Capture d'écran</button>
+            <button class="btn btn-danger" onclick="viderDonnees()"><i class="fa fa-trash"></i> Vider les Données</button>
+        </div>
+    </div>
+
+<script>
+let vendeurs = [];
+let clientsChart, pointsChart, pointsParClientChart; // NEW: Added pointsParClientChart
+
+function populatePeriodeSelects() {
+    const selectMois = document.getElementById('selectMois');
+    const selectTrimestre = document.getElementById('selectTrimestre');
+    const selectSemestre = document.getElementById('selectSemestre');
+    const selectAnnee = document.getElementById('selectAnnee');
+    for (let year = 2025; year <= 2030; year++) {
+        const optA = document.createElement('option');
+        optA.value = `${year}`;
+        optA.textContent = `${year}`;
+        selectAnnee.appendChild(optA);
+
+        for (let m = 1; m <= 12; m++) {
+            const opt = document.createElement('option');
+            opt.value = `${year}-${String(m).padStart(2,'0')}`;
+            opt.textContent = `${year}-${String(m).padStart(2,'0')}`;
+            selectMois.appendChild(opt);
+        }
+        for (let t = 1; t <= 4; t++) {
+            const optT = document.createElement('option');
+            optT.value = `${year}-Q${t}`;
+            optT.textContent = `${year} Q${t}`;
+            selectTrimestre.appendChild(optT);
+        }
+        for (let s = 1; s <= 2; s++) {
+            const optS = document.createElement('option');
+            optS.value = `${year}-S${s}`;
+            optS.textContent = `${year} S${s}`;
+            selectSemestre.appendChild(optS);
+        }
+    }
+}
+
+function changerTypePeriode() {
+    const type = document.getElementById('typePeriode').value;
+    document.getElementById('groupeMois').style.display = type === 'mois' ? 'flex' : 'none';
+    document.getElementById('groupeTrimestre').style.display = type === 'trimestre' ? 'flex' : 'none';
+    document.getElementById('groupeSemestre').style.display = type === 'semestre' ? 'flex' : 'none';
+    document.getElementById('groupeAnnee').style.display = type === 'annee' ? 'flex' : 'none';
+    afficherPeriodeSelectionnee();
+}
+
+function afficherPeriodeSelectionnee() {
+    const type = document.getElementById('typePeriode').value;
+    let texte = '';
+    if (type === 'mois') {
+        texte = document.getElementById('selectMois').value;
+    } else if (type === 'trimestre') {
+        texte = document.getElementById('selectTrimestre').value.replace('-Q', ' Q');
+    } else if (type === 'semestre') {
+        texte = document.getElementById('selectSemestre').value.replace('-S', ' S');
+    } else {
+        texte = document.getElementById('selectAnnee').value;
+    }
+    document.getElementById('selectedPeriod').textContent = texte;
+}
+
+function getBelgiumHolidays(year) {
+    const holidays = new Set();
+    holidays.add(`${year}-01-01`); // Nouvel An
+    const easter = getEasterDate(year);
+    const addDays = (date, d) => new Date(date.getTime() + d * 86400000);
+    const format = d => d.toISOString().split('T')[0];
+    holidays.add(format(addDays(easter, 1))); // Lundi de Pâques
+    holidays.add(`${year}-05-01`); // Fête du Travail
+    holidays.add(format(addDays(easter, 39))); // Ascension
+    holidays.add(format(addDays(easter, 50))); // Lundi de Pentecôte
+    holidays.add(`${year}-07-21`); // Fête nationale
+    holidays.add(`${year}-08-15`); // Assomption
+    holidays.add(`${year}-11-01`); // Toussaint
+    holidays.add(`${year}-11-11`); // Armistice
+    holidays.add(`${year}-12-25`); // Noël
+    return holidays;
+}
+
+// Algorithme de calcul de la date de Pâques (algorithme de Meeus/Jones/Butcher)
+function getEasterDate(year) {
+    const f = Math.floor;
+    const G = year % 19;
+    const C = f(year / 100);
+    const H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30;
+    const I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11));
+    const J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7;
+    const L = I - J;
+    const month = 3 + f((L + 40) / 44);
+    const day = L + 28 - 31 * f(month / 4);
+    return new Date(year, month - 1, day);
+}
+
+function calculateWorkingDays(start, end) {
+    let total = 0;
+    let weekCount = 0;
+    const holidays = new Set();
+    for (let y = start.getFullYear(); y <= end.getFullYear(); y++) {
+        for (const h of getBelgiumHolidays(y)) holidays.add(h);
+    }
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const day = d.getDay(); // 0 dimanche
+        const dateStr = d.toISOString().split('T')[0];
+        if (day !== 0 && !holidays.has(dateStr)) {
+            total++;
+            weekCount++;
+        }
+        if (day === 6 || d.getTime() === end.getTime()) {
+            if (weekCount > 0) {
+                total--; // jour off hebdomadaire
+            }
+            weekCount = 0;
+        }
+    }
+    return total;
+}
+
+function ajouterVendeur() {
+    const nom = document.getElementById('vendeurNom').value.trim();
+    const typePeriode = document.getElementById('typePeriode').value;
+    let startDate, endDate;
+    if (typePeriode === 'mois') {
+        const [year, month] = document.getElementById('selectMois').value.split('-').map(Number);
+        startDate = new Date(year, month - 1, 1);
+        endDate = new Date(year, month, 0);
+    } else if (typePeriode === 'trimestre') {
+        const [year, trimestre] = document.getElementById('selectTrimestre').value.split('-Q');
+        const startMonth = (parseInt(trimestre) - 1) * 3;
+        startDate = new Date(parseInt(year), startMonth, 1);
+        endDate = new Date(parseInt(year), startMonth + 3, 0);
+    } else if (typePeriode === 'semestre') {
+        const [year, semestre] = document.getElementById('selectSemestre').value.split('-S');
+        const startMonth = (parseInt(semestre) - 1) * 6;
+        startDate = new Date(parseInt(year), startMonth, 1);
+        endDate = new Date(parseInt(year), startMonth + 6, 0);
+    } else {
+        const year = parseInt(document.getElementById('selectAnnee').value);
+        startDate = new Date(year, 0, 1);
+        endDate = new Date(year, 11, 31);
+    }
+
+    const tauxProductivite = parseFloat(document.getElementById('tauxProductivite').value) || 100;
+    const totalClients = parseInt(document.getElementById('totalClients').value) || 0;
+    const totalPoints = parseInt(document.getElementById('totalPoints').value) || 0;
+
+    if (!nom) {
+        alert('Veuillez saisir le nom du vendeur.');
+        return;
+    }
+
+    const joursTravaillables = calculateWorkingDays(startDate, endDate);
+    const joursReelsTravaill = Math.max(1, joursTravaillables * (tauxProductivite / 100));
+    const clientsParJour = (totalClients / joursReelsTravaill).toFixed(2);
+    const pointsParJour = (totalPoints / joursReelsTravaill).toFixed(2);
+    // NEW: Calculate points par client
+    const pointsParClient = (totalClients > 0) ? (totalPoints / totalClients).toFixed(2) : 0;
+
+
+    const vendeur = {
+        nom,
+        joursTravaillables,
+        tauxProductivite,
+        joursReelsTravaill,
+        totalClients,
+        totalPoints,
+        clientsParJour: parseFloat(clientsParJour),
+        pointsParJour: parseFloat(pointsParJour),
+        pointsParClient: parseFloat(pointsParClient) // NEW: Store pointsParClient
+    };
+
+    vendeurs.push(vendeur);
+    
+    document.getElementById('vendeurNom').value = '';
+    document.getElementById('tauxProductivite').value = '100';
+    document.getElementById('totalClients').value = '';
+    document.getElementById('totalPoints').value = '';
+
+    mettreAJourAffichage();
+}
+
+function supprimerVendeur(index) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce vendeur ?')) {
+        vendeurs.splice(index, 1);
+        mettreAJourAffichage();
+    }
+}
+
+function getPerformanceClass(valeur, moyenne) {
+    if (moyenne === 0 && valeur === 0) return 'average'; // Handle case where average is 0
+    if (moyenne === 0 && valeur > 0) return 'above-average';
+    if (valeur > moyenne) return 'above-average';
+    if (valeur < moyenne) return 'below-average';
+    return 'average';
+}
+
+function mettreAJourAffichage() {
+    mettreAJourTableau();
+    mettreAJourGraphiques();
+    mettreAJourStats();
+}
+
+function mettreAJourTableau() {
+    const container = document.getElementById('tableauVendeurs');
+    
+    if (vendeurs.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #6c757d; font-style: italic;">Aucun vendeur ajouté pour le moment.</p>';
+        // NEW: Ensure charts are cleared if no sellers
+        if (clientsChart) clientsChart.destroy();
+        if (pointsChart) pointsChart.destroy();
+        if (pointsParClientChart) pointsParClientChart.destroy();
+        clientsChart = null;
+        pointsChart = null;
+        pointsParClientChart = null;
+        // Clear chart canvases if needed by drawing empty state or hiding them
+        document.getElementById('clientsChart').getContext('2d').clearRect(0, 0, document.getElementById('clientsChart').width, document.getElementById('clientsChart').height);
+        document.getElementById('pointsChart').getContext('2d').clearRect(0, 0, document.getElementById('pointsChart').width, document.getElementById('pointsChart').height);
+        document.getElementById('pointsParClientChart').getContext('2d').clearRect(0, 0, document.getElementById('pointsParClientChart').width, document.getElementById('pointsParClientChart').height);
+        return;
+    }
+
+    const moyenneClientsJour = vendeurs.reduce((sum, v) => sum + v.clientsParJour, 0) / vendeurs.length;
+    const moyennePointsJour = vendeurs.reduce((sum, v) => sum + v.pointsParJour, 0) / vendeurs.length;
+    // NEW: Calculate average points per client for the team
+    const moyennePointsParClient = vendeurs.reduce((sum, v) => sum + v.pointsParClient, 0) / vendeurs.length;
+
+
+    const headerAbsence = 'Productivité (%)';
+
+    let html = `
+        <div style="background: #e8f4f8; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #2c3e50;">📊 Moyennes de l'Équipe</h3>
+            <p style="margin: 10px 0 0 0; color: #34495e;">
+                <strong>Clients/Jour :</strong> ${moyenneClientsJour.toFixed(2)} |
+                <strong>Points/Jour :</strong> ${moyennePointsJour.toFixed(0)} |
+                <strong>Points/Client :</strong> ${moyennePointsParClient.toFixed(2)} </p>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Vendeur</th>
+                    <th>Jours Travaillables</th>
+                    <th id="colAbsence">${headerAbsence}</th>
+                    <th>Jours Réels</th>
+                    <th>Total Clients</th>
+                    <th>Total Points</th>
+                    <th>Clients/Jour</th>
+                    <th>Points/Jour</th>
+                    <th>Points/Client</th> <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    vendeurs.forEach((vendeur, index) => {
+        const clientsClass = getPerformanceClass(vendeur.clientsParJour, moyenneClientsJour);
+        const pointsClass = getPerformanceClass(vendeur.pointsParJour, moyennePointsJour);
+        const pointsParClientClass = getPerformanceClass(vendeur.pointsParClient, moyennePointsParClient); // NEW
+        
+        html += `
+            <tr>
+                <td><strong>${vendeur.nom}</strong></td>
+                <td>${vendeur.joursTravaillables}</td>
+                <td>${vendeur.tauxProductivite}%</td>
+                <td>${vendeur.joursReelsTravaill}</td>
+                <td>${vendeur.totalClients}</td>
+                <td>${vendeur.totalPoints}</td>
+                <td><span class="performance-cell ${clientsClass}">${vendeur.clientsParJour.toFixed(2)}</span></td>
+                <td><span class="performance-cell ${pointsClass}">${vendeur.pointsParJour.toFixed(2)}</span></td>
+                <td><span class="performance-cell ${pointsParClientClass}">${vendeur.pointsParClient.toFixed(2)}</span></td> <td><button class="btn btn-danger" onclick="supprimerVendeur(${index})">Supprimer</button></td>
+            </tr>
+        `;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function mettreAJourGraphiques() {
+    if (vendeurs.length === 0) {
+         // Handled in mettreAJourTableau now for clearing charts
+        return;
+    }
+
+    const noms = vendeurs.map(v => v.nom);
+    const clientsData = vendeurs.map(v => v.clientsParJour);
+    const pointsData = vendeurs.map(v => v.pointsParJour);
+    const pointsParClientData = vendeurs.map(v => v.pointsParClient); // NEW: Data for new chart
+
+    // Graphique Clients
+    const ctxClients = document.getElementById('clientsChart').getContext('2d');
+    if (clientsChart) clientsChart.destroy();
+    
+    clientsChart = new Chart(ctxClients, {
+        type: 'bar',
+        data: {
+            labels: noms,
+            datasets: [{
+                label: 'Clients par Jour',
+                data: clientsData,
+                backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Clients Servis par Jour',
+                    font: { size: 16, weight: 'bold' }
+                },
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Clients/Jour'
+                    }
+                }
+            }
+        }
+    });
+
+    // Graphique Points
+    const ctxPoints = document.getElementById('pointsChart').getContext('2d');
+    if (pointsChart) pointsChart.destroy();
+    
+    pointsChart = new Chart(ctxPoints, {
+        type: 'bar',
+        data: {
+            labels: noms,
+            datasets: [{
+                label: 'Points par Jour',
+                data: pointsData,
+                backgroundColor: 'rgba(118, 75, 162, 0.8)',
+                borderColor: 'rgba(118, 75, 162, 1)',
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Points Réalisés par Jour',
+                    font: { size: 16, weight: 'bold' }
+                },
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Points/Jour'
+                    }
+                }
+            }
+        }
+    });
+
+    // NEW: Graphique Points par Client
+    const ctxPointsParClient = document.getElementById('pointsParClientChart').getContext('2d');
+    if (pointsParClientChart) pointsParClientChart.destroy();
+    
+    pointsParClientChart = new Chart(ctxPointsParClient, {
+        type: 'bar',
+        data: {
+            labels: noms,
+            datasets: [{
+                label: 'Points par Client',
+                data: pointsParClientData,
+                backgroundColor: 'rgba(75, 192, 192, 0.8)', // Different color
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Moyenne Points par Client',
+                    font: { size: 16, weight: 'bold' }
+                },
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Points/Client'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function mettreAJourStats() {
+    const totalVendeurs = vendeurs.length;
+    const moyenneClients = vendeurs.length > 0 ? 
+        (vendeurs.reduce((sum, v) => sum + v.clientsParJour, 0) / vendeurs.length).toFixed(1) : 0;
+    const moyennePoints = vendeurs.length > 0 ? 
+        (vendeurs.reduce((sum, v) => sum + v.pointsParJour, 0) / vendeurs.length).toFixed(0) : 0;
+    
+    let meilleurPerformeur = '-';
+    let meilleurPointsJour = '-';
+    let meilleurPointsClient = '-';
+    if (vendeurs.length > 0) {
+        const meilleur = [...vendeurs].sort((a,b) => b.clientsParJour - a.clientsParJour)[0];
+        meilleurPerformeur = meilleur.nom;
+
+        const bestPointsJour = [...vendeurs].sort((a,b) => b.pointsParJour - a.pointsParJour)[0];
+        meilleurPointsJour = bestPointsJour.nom;
+
+        const bestPointsClient = [...vendeurs].sort((a,b) => b.pointsParClient - a.pointsParClient)[0];
+        meilleurPointsClient = bestPointsClient.nom;
+    }
+
+    document.getElementById('totalVendeurs').textContent = totalVendeurs;
+    document.getElementById('moyenneClients').textContent = moyenneClients;
+    document.getElementById('moyennePoints').textContent = moyennePoints;
+    document.getElementById('meilleurPerformeur').textContent = meilleurPerformeur;
+    document.getElementById('meilleurPointsJour').textContent = meilleurPointsJour;
+    document.getElementById('meilleurPointsClient').textContent = meilleurPointsClient;
+}
+
+function exporterDonnees() {
+    if (vendeurs.length === 0) {
+        alert('Aucune donnée à exporter.');
+        return;
+    }
+
+    const moyenneClientsJour = vendeurs.reduce((sum, v) => sum + v.clientsParJour, 0) / vendeurs.length;
+    const moyennePointsJour = vendeurs.reduce((sum, v) => sum + v.pointsParJour, 0) / vendeurs.length;
+    const moyennePointsParClient = vendeurs.reduce((sum, v) => sum + v.pointsParClient, 0) / vendeurs.length; // NEW
+
+    const headerAbsence = 'Productivité (%)';
+
+    const donneesExport = [
+        ['ANALYSE DE PERFORMANCE - EQUIPE DE VENTE'],
+        ['Date d\'export:', new Date().toLocaleDateString('fr-FR')],
+        [''],
+        ['MOYENNES DE L\'EQUIPE'],
+        ['Moyenne Clients/Jour:', moyenneClientsJour.toFixed(2)],
+        ['Moyenne Points/Jour:', moyennePointsJour.toFixed(0)],
+        ['Moyenne Points/Client:', moyennePointsParClient.toFixed(2)], // NEW
+        [''],
+        ['DONNEES DETAILLEES'],
+        // MODIFIED: Added Points/Client and its performance column
+        ['Vendeur', 'Jours Travaillables', headerAbsence, 'Jours Réels', 'Total Clients', 'Total Points', 'Clients/Jour', 'Points/Jour', 'Points/Client', 'Performance Clients/Jour', 'Performance Points/Jour', 'Performance Points/Client']
+    ];
+
+    vendeurs.forEach(vendeur => {
+        const perfClientsJour = vendeur.clientsParJour > moyenneClientsJour ? 'AU-DESSUS' : 
+                          vendeur.clientsParJour < moyenneClientsJour ? 'EN-DESSOUS' : 'MOYENNE';
+        const perfPointsJour = vendeur.pointsParJour > moyennePointsJour ? 'AU-DESSUS' : 
+                         vendeur.pointsParJour < moyennePointsJour ? 'EN-DESSOUS' : 'MOYENNE';
+        const perfPointsParClient = vendeur.pointsParClient > moyennePointsParClient ? 'AU-DESSUS' :
+                             vendeur.pointsParClient < moyennePointsParClient ? 'EN-DESSOUS' : 'MOYENNE'; // NEW
+        
+        donneesExport.push([
+            vendeur.nom,
+            vendeur.joursTravaillables,
+            vendeur.tauxProductivite + '%',
+            vendeur.joursReelsTravaill,
+            vendeur.totalClients,
+            vendeur.totalPoints,
+            vendeur.clientsParJour.toFixed(2),
+            vendeur.pointsParJour.toFixed(2),
+            vendeur.pointsParClient.toFixed(2), // NEW
+            perfClientsJour,
+            perfPointsJour,
+            perfPointsParClient // NEW
+        ]);
+    });
+
+    donneesExport.push([]);
+    donneesExport.push(['CLASSEMENT PAR CLIENTS/JOUR']);
+    const vendeursTriesClientsJour = [...vendeurs].sort((a, b) => b.clientsParJour - a.clientsParJour);
+    vendeursTriesClientsJour.forEach((vendeur, index) => {
+        donneesExport.push([`${index + 1}. ${vendeur.nom}`, vendeur.clientsParJour.toFixed(2)]);
+    });
+
+    donneesExport.push([]);
+    donneesExport.push(['CLASSEMENT PAR POINTS/JOUR']);
+    const vendeursTriesPointsJour = [...vendeurs].sort((a, b) => b.pointsParJour - a.pointsParJour);
+    vendeursTriesPointsJour.forEach((vendeur, index) => {
+        donneesExport.push([`${index + 1}. ${vendeur.nom}`, vendeur.pointsParJour.toFixed(2)]);
+    });
+    
+    // NEW: Ranking by Points/Client
+    donneesExport.push([]);
+    donneesExport.push(['CLASSEMENT PAR POINTS/CLIENT']);
+    const vendeursTriesPointsClient = [...vendeurs].sort((a, b) => b.pointsParClient - a.pointsParClient);
+    vendeursTriesPointsClient.forEach((vendeur, index) => {
+        donneesExport.push([`${index + 1}. ${vendeur.nom}`, vendeur.pointsParClient.toFixed(2)]);
+    });
+
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(donneesExport);
+
+    // MODIFIED: Adjusted column widths for new columns
+    ws['!cols'] = [
+        {width: 20}, {width: 15}, {width: 15}, {width: 12}, 
+        {width: 15}, {width: 15}, {width: 15}, {width: 15}, 
+        {width: 15}, {width: 20}, {width: 20}, {width: 22} // Added width for Points/Client and its perf
+    ];
+    
+    const headerRowIndexDetailedData = 8; // Row index for 'DONNEES DETAILLEES' headers
+    const firstDataRowIndex = headerRowIndexDetailedData + 1;
+
+    // Styliser les cellules importantes
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = 0; R <= range.e.r; ++R) {
+        for (let C = 0; C <= range.e.c; ++C) {
+            const cell_address = {c: C, r: R};
+            const cell_ref = XLSX.utils.encode_cell(cell_address);
+            
+            if (!ws[cell_ref]) continue;
+            
+            // Styliser les titres et en-têtes principaux
+             if (R === 0 || R === 3 || R === headerRowIndexDetailedData -1 ||
+                (R === headerRowIndexDetailedData && ws[cell_ref].v !== '') ||
+                ws[cell_ref].v === 'CLASSEMENT PAR CLIENTS/JOUR' ||
+                ws[cell_ref].v === 'CLASSEMENT PAR POINTS/JOUR' ||
+                ws[cell_ref].v === 'CLASSEMENT PAR POINTS/CLIENT' ) { // NEW: Ranking title
+                ws[cell_ref].s = {
+                    font: { bold: true, color: { rgb: "FFFFFF" } },
+                    fill: { fgColor: { rgb: "4472C4" } },
+                    alignment: { horizontal: "center" }
+                };
+            }
+            
+            // Colorier selon les performances (lignes de données)
+            if (R >= firstDataRowIndex && R < firstDataRowIndex + vendeurs.length) {
+                const vendeurIndex = R - firstDataRowIndex;
+                const vendeur = vendeurs[vendeurIndex];
+                
+                // Colonne Clients/Jour (G, index 6)
+                if (C === 6) { 
+                    if (vendeur.clientsParJour > moyenneClientsJour) ws[cell_ref].s = { fill: { fgColor: { rgb: "D4EDDA" } } };
+                    else if (vendeur.clientsParJour < moyenneClientsJour) ws[cell_ref].s = { fill: { fgColor: { rgb: "F8D7DA" } } };
+                }
+                // Colonne Points/Jour (H, index 7)
+                if (C === 7) {
+                    if (vendeur.pointsParJour > moyennePointsJour) ws[cell_ref].s = { fill: { fgColor: { rgb: "D4EDDA" } } };
+                    else if (vendeur.pointsParJour < moyennePointsJour) ws[cell_ref].s = { fill: { fgColor: { rgb: "F8D7DA" } } };
+                }
+                // NEW: Colonne Points/Client (I, index 8)
+                 if (C === 8) {
+                    if (vendeur.pointsParClient > moyennePointsParClient) ws[cell_ref].s = { fill: { fgColor: { rgb: "D4EDDA" } } };
+                    else if (vendeur.pointsParClient < moyennePointsParClient && vendeur.totalClients > 0) ws[cell_ref].s = { fill: { fgColor: { rgb: "F8D7DA" } } };
+                    // else if (vendeur.totalClients === 0) {} // No specific color if 0 clients
+                }
+            }
+        }
+    }
+
+
+    XLSX.utils.book_append_sheet(wb, ws, "Performance Équipe");
+    
+    const fileName = `Performance_Equipe_Vente_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    
+    alert('✅ Fichier Excel exporté avec succès !\n\n' +
+          '🟢 Vert = Au-dessus de la moyenne\n' +
+          '🔴 Rouge = En-dessous de la moyenne\n' +
+          'Le fichier inclut les moyennes, classements et analyses comparatives.');
+}
+
+function viderDonnees() {
+    if (confirm('Êtes-vous sûr de vouloir supprimer toutes les données ?')) {
+        vendeurs = [];
+        mettreAJourAffichage(); // This will clear table, graphs, stats
+    }
+}
+
+
+function exporterCapture() {
+    if (vendeurs.length === 0) {
+        alert('Aucune donnée à capturer. Ajoutez d\'abord des vendeurs.');
+        return;
+    }
+
+    const maintenant = new Date();
+    const dateFormatee = maintenant.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    document.getElementById('reportDate').textContent = `Généré le ${dateFormatee}`;
+
+    const boutonCapture = event.target;
+    const texteOriginal = boutonCapture.textContent;
+    boutonCapture.textContent = '⏳ Génération en cours...';
+    boutonCapture.disabled = true;
+
+    setTimeout(() => {
+        html2canvas(document.getElementById('exportZone'), {
+            backgroundColor: '#ffffff',
+            scale: 2, 
+            useCORS: true,
+            allowTaint: false,
+            width: document.getElementById('exportZone').scrollWidth,
+            height: document.getElementById('exportZone').scrollHeight,
+            scrollX: 0,
+            scrollY: 0
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Rapport_Performance_Equipe_${new Date().toISOString().split('T')[0]}.png`;
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+            
+            boutonCapture.textContent = texteOriginal;
+            boutonCapture.disabled = false;
+            
+            alert('✅ Capture d\'écran exportée avec succès !\n\n' +
+                  '📸 L\'image inclut :\n' +
+                  '• Tableau des performances avec codes couleur\n' +
+                  '• Graphiques de comparaison (y compris Points/Client)\n' + // MODIFIED
+                  '• Statistiques globales\n' +
+                  '• Date et heure de génération');
+                  
+        }).catch(error => {
+            console.error('Erreur lors de la capture:', error);
+            boutonCapture.textContent = texteOriginal;
+            boutonCapture.disabled = false;
+            alert('❌ Erreur lors de la génération de la capture d\'écran.\nVeuillez réessayer.');
+        });
+    }, 500); // Increased timeout slightly for potentially more complex rendering
+}
+
+// Initial call to set up the view if needed, though it's mostly event-driven
+document.addEventListener('DOMContentLoaded', () => {
+    populatePeriodeSelects();
+    changerTypePeriode();
+    afficherPeriodeSelectionnee();
+    mettreAJourAffichage(); // To set the initial empty state correctly
+});
+</script>
+</body>
+</html>
